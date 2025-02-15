@@ -1,9 +1,11 @@
-import { Body, Controller, Get, Param, Post, Query, ParseIntPipe } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, ParseIntPipe, UseInterceptors } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { QueryFilterDto } from './dto/query-filter.dto';
+import { ResponseInterceptor } from 'src/response/response.interceptor';
 
 @Controller('users')
+@UseInterceptors(ResponseInterceptor)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
