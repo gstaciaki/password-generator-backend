@@ -35,3 +35,10 @@ docker compose up -d
 ```bash
 curl --location 'http://localhost/passwords'
 ```
+
+## Checklist do Projeto
+
+- [X] CRUD completo dos dados no banco de dados.
+- [X] Validações e tratamentos de errors.
+- [X] Retorno dos dados de forma organizada.
+- [ ] Deploy da API em um serviço.
