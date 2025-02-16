@@ -14,15 +14,15 @@ export class UserService {
     return this.prisma.user.findMany();
   }
 
-  async findOne(id: number) {
+  async findOne(id: string) {
     return this.prisma.user.findUnique({ where: { id } });
   }
 
-  async update(id: number, data: Prisma.UserUpdateInput) {
+  async update(id: string, data: Prisma.UserUpdateInput) {
     return this.prisma.user.update({ where: { id }, data });
   }
 
-  async remove(id: number) {
+  async remove(id: string) {
     return this.prisma.user.delete({ where: { id } });
   }
 }

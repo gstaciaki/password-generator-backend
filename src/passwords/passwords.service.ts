@@ -1,42 +1,45 @@
 import { Injectable } from '@nestjs/common';
+import { PrismaService } from 'src/prisma/prisma.service';
+import * as dtos from './dto/password.dto';
+import { randomBytes } from 'crypto';
 
 @Injectable()
 export class PasswordsService {
-    private passwords = [
-        { id: 1, password: 'abc123' },
-        { id: 2, password: 'bca321' }
-    ]
+  constructor(private prisma: PrismaService) {}
 
-    findAll() {
-        return this.passwords
-    }
+  findAll() {
+    return this.prisma.password.findMany();
+  }
 
-    findOne(id: number) {
-        return this.passwords.find(p => p.id === id)
-    }
+  findOne(id: string) {
+    return this.prisma.password.findUnique({ where: { id } });
+  }
 
-    create(password: { password: string }) {
-        const newPassword = {
-            id: this.passwords.length + 1,
-            ...password
-        }
-        this.passwords.push(newPassword)
-        return newPassword
-    }
+  create(password: dtos.CreatePasswordDto) {
+    const newPassword = this.generatePassword();
 
-    update(id: number, passwordUpdates: { password: string }) {
-        const passwordIndex = this.passwords.findIndex(p => p.id === id)
-        if (passwordIndex === -1) return `Password with id:${id} not found`
+    return this.prisma.password.create({
+      data: {
+        value: newPassword,
+        accountEmail: password.accountEmail,
+        alias: password.passwordAlias,
+        description: password.description,
+      },
+    });
+  }
 
-        this.passwords[passwordIndex] = { ...this.passwords[passwordIndex], ...passwordUpdates }
-        return this.passwords[passwordIndex]
-    }
+  update(id: string, passwordUpdates: dtos.UpdatePasswordDto) {
+    return this.prisma.password.update({
+      where: { id },
+      data: passwordUpdates,
+    });
+  }
 
-    remove(id: number) {
-        const passwordIndex = this.passwords.findIndex(p => p.id === id)
-        if (passwordIndex === -1) return `Password with id:${id} not found`
+  remove(id: string) {
+    return this.prisma.password.delete({ where: { id } });
+  }
 
-        this.passwords.splice(passwordIndex, 1)
-        return this.passwords[passwordIndex]
-    }
+  private generatePassword(length = 20): string {
+    return randomBytes(length).toString('base64').slice(0, length);
+  }
 }
