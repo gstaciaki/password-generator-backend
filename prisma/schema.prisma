@@ -24,7 +24,7 @@ model User {
 
 model Password {
   id String @id @default(uuid())
-  accountEmail String @unique
+  accountEmail String
   alias String
   value String
   description String?
