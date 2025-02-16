@@ -1,0 +1,24 @@
+services:
+  db:
+    image: mysql:8.4.0
+    env_file:
+      - .env
+    environment:
+      MYSQL_DATABASE: "$DATABASE_NAME"
+      MYSQL_USER: "$DATABASE_USER"
+      MYSQL_PASSWORD: "$DATABASE_PASSWORD"
+      MYSQL_ALLOW_EMPTY_PASSWORD: yes
+    volumes:
+      - dbdata:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - app-network
+    ports:
+      - "3306:3306"
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  dbdata:
