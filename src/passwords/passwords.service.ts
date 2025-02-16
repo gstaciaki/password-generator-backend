@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import * as dtos from './dto/password.dto';
 import { randomBytes } from 'crypto';
@@ -7,16 +7,32 @@ import { randomBytes } from 'crypto';
 export class PasswordsService {
   constructor(private prisma: PrismaService) {}
 
-  findAll() {
-    return this.prisma.password.findMany();
+  async findAll() {
+    const passwords = await this.prisma.password.findMany();
+
+    return passwords.map((p) => {
+      return {
+        id: p.id,
+        alias: p.alias,
+        accountEmail: p.accountEmail,
+      };
+    });
   }
 
-  findOne(id: string) {
-    return this.prisma.password.findUnique({ where: { id } });
+  async findOne(id: string) {
+    const password = await this.prisma.password.findUnique({ where: { id } });
+
+    if (!password) {
+      throw new NotFoundException('Recurso nao encontrado');
+    }
+
+    return password;
   }
 
-  create(password: dtos.CreatePasswordDto) {
-    const newPassword = this.generatePassword();
+  async create(
+    password: dtos.CreatePasswordDtoInput,
+  ): Promise<dtos.CreatePasswordDtoOutput> {
+    const newPassword = await this.generatePassword();
 
     return this.prisma.password.create({
       data: {
@@ -28,18 +44,45 @@ export class PasswordsService {
     });
   }
 
-  update(id: string, passwordUpdates: dtos.UpdatePasswordDto) {
+  async update(
+    id: string,
+    passwordUpdates: dtos.UpdatePasswordDtoInput,
+  ): Promise<dtos.UpdatePasswordDtoOutput> {
+    const password = await this.findOne(id);
+    if (!password) {
+      throw new NotFoundException('Recurso nao encontrado');
+    }
+
     return this.prisma.password.update({
       where: { id },
       data: passwordUpdates,
     });
   }
 
-  remove(id: string) {
+  async remove(id: string) {
+    const password = await this.findOne(id);
+    if (!password) {
+      throw new NotFoundException('Recurso nao encontrado');
+    }
+
     return this.prisma.password.delete({ where: { id } });
   }
 
-  private generatePassword(length = 20): string {
+  async genNewPassword(id: string) {
+    const password = await this.findOne(id);
+    if (!password) {
+      throw new NotFoundException('Recurso nao encontrado');
+    }
+
+    return this.prisma.password.update({
+      where: { id },
+      data: {
+        value: await this.generatePassword(),
+      },
+    });
+  }
+
+  private async generatePassword(length = 20): Promise<string> {
     return randomBytes(length).toString('base64').slice(0, length);
   }
 }

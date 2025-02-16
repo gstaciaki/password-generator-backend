@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  Patch,
   Post,
   Put,
 } from '@nestjs/common';
@@ -25,13 +26,18 @@ export class PasswordsController {
   }
 
   @Post()
-  create(@Body() body: dtos.CreatePasswordDto) {
+  create(@Body() body: dtos.CreatePasswordDtoInput) {
     return this.passwordsService.create(body);
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() body: dtos.UpdatePasswordDto) {
+  update(@Param('id') id: string, @Body() body: dtos.UpdatePasswordDtoInput) {
     return this.passwordsService.update(id, body);
+  }
+
+  @Patch(':id/regenerate')
+  genNewPassword(@Param('id') id: string) {
+    return this.passwordsService.genNewPassword(id);
   }
 
   @Delete(':id')
