@@ -1,42 +1,88 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from 'src/prisma/prisma.service';
+import * as dtos from './dto/password.dto';
+import { randomBytes } from 'crypto';
 
 @Injectable()
 export class PasswordsService {
-    private passwords = [
-        { id: 1, password: 'abc123' },
-        { id: 2, password: 'bca321' }
-    ]
+  constructor(private prisma: PrismaService) {}
 
-    findAll() {
-        return this.passwords
+  async findAll() {
+    const passwords = await this.prisma.password.findMany();
+
+    return passwords.map((p) => {
+      return {
+        id: p.id,
+        alias: p.alias,
+        accountEmail: p.accountEmail,
+      };
+    });
+  }
+
+  async findOne(id: string) {
+    const password = await this.prisma.password.findUnique({ where: { id } });
+
+    if (!password) {
+      throw new NotFoundException('Recurso nao encontrado');
     }
 
-    findOne(id: number) {
-        return this.passwords.find(p => p.id === id)
+    return password;
+  }
+
+  async create(
+    password: dtos.CreatePasswordDtoInput,
+  ): Promise<dtos.CreatePasswordDtoOutput> {
+    const newPassword = await this.generatePassword();
+
+    return this.prisma.password.create({
+      data: {
+        value: newPassword,
+        accountEmail: password.accountEmail,
+        alias: password.passwordAlias,
+        description: password.description,
+      },
+    });
+  }
+
+  async update(
+    id: string,
+    passwordUpdates: dtos.UpdatePasswordDtoInput,
+  ): Promise<dtos.UpdatePasswordDtoOutput> {
+    const password = await this.findOne(id);
+    if (!password) {
+      throw new NotFoundException('Recurso nao encontrado');
     }
 
-    create(password: { password: string }) {
-        const newPassword = {
-            id: this.passwords.length + 1,
-            ...password
-        }
-        this.passwords.push(newPassword)
-        return newPassword
+    return this.prisma.password.update({
+      where: { id },
+      data: passwordUpdates,
+    });
+  }
+
+  async remove(id: string) {
+    const password = await this.findOne(id);
+    if (!password) {
+      throw new NotFoundException('Recurso nao encontrado');
     }
 
-    update(id: number, passwordUpdates: { password: string }) {
-        const passwordIndex = this.passwords.findIndex(p => p.id === id)
-        if (passwordIndex === -1) return `Password with id:${id} not found`
+    return this.prisma.password.delete({ where: { id } });
+  }
 
-        this.passwords[passwordIndex] = { ...this.passwords[passwordIndex], ...passwordUpdates }
-        return this.passwords[passwordIndex]
+  async genNewPassword(id: string) {
+    const password = await this.findOne(id);
+    if (!password) {
+      throw new NotFoundException('Recurso nao encontrado');
     }
 
-    remove(id: number) {
-        const passwordIndex = this.passwords.findIndex(p => p.id === id)
-        if (passwordIndex === -1) return `Password with id:${id} not found`
+    return this.prisma.password.update({
+      where: { id },
+      data: {
+        value: await this.generatePassword(),
+      },
+    });
+  }
 
-        this.passwords.splice(passwordIndex, 1)
-        return this.passwords[passwordIndex]
-    }
+  private async generatePassword(length = 20): Promise<string> {
+    return randomBytes(length).toString('base64').slice(0, length);
+  }
 }

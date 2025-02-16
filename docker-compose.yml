@@ -16,6 +16,22 @@ services:
     ports:
       - "3306:3306"
 
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nest
+    environment:
+      - PORT=${PORT}
+    ports:
+      - '3000:3000'
+    networks:
+      - app-network
+    depends_on:
+      - db
+    volumes:
+      - ./src:/app/src
+
 networks:
   app-network:
     driver: bridge
